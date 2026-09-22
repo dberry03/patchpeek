@@ -74,3 +74,10 @@ Snapshotting is dominated by per-file overhead on Windows, not by hashing
 - Unity bundles are opened in a **process pool** — that part really is
   CPU-bound
 - files placed in the gallery are **hardlinked**, not copied
+
+##Requirements
+
+Python 3.9+
+PyQt6>=6.6
+UnityPy>=1.20
+Pillow>=10.0
