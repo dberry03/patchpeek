@@ -75,7 +75,7 @@ Snapshotting is dominated by per-file overhead on Windows, not by hashing
   CPU-bound
 - files placed in the gallery are **hardlinked**, not copied
 
-##Requirements
+## Requirements
 
 Python 3.9+
 PyQt6>=6.6
