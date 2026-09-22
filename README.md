@@ -77,7 +77,7 @@ Snapshotting is dominated by per-file overhead on Windows, not by hashing
 
 ## Requirements
 
-Python 3.9+
-PyQt6>=6.6
-UnityPy>=1.20
-Pillow>=10.0
+- Python 3.9+
+- PyQt6>=6.6
+- UnityPy>=1.20
+- Pillow>=10.0
