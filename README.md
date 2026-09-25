@@ -10,10 +10,9 @@ Pull an Android game's files off an emulator, unpack them, and diff every
 patch to find new artwork, config and content the moment it lands on your
 device — often days or weeks before it goes live.
 
-![Python](https://img.shields.io/badge/Python-3.9%2B-3776ab)
-![Platform](https://img.shields.io/badge/Platform-Windows-0078d6)
-![UI](https://img.shields.io/badge/UI-PyQt6-41cd52)
-![License](https://img.shields.io/badge/License-MIT-f5a524)
+[![Download](https://img.shields.io/badge/Download-Installer-f5a524)](../../releases/latest)
+![Platform](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078d6)
+![License](https://img.shields.io/badge/License-MIT-41cd52)
 
 <br/>
 
@@ -33,9 +32,10 @@ the game's files after every patch and compare the snapshots.
 PatchPeek automates that whole loop and gives you a place to browse the
 result — no adb commands, no unzipping, no hunting through folders.
 
-> Built for [Heckfire](https://play.google.com/store/apps/details?id=ata.kraken.heckfire)
-> on BlueStacks, but nothing in it is Heckfire-specific. Point it at any Unity
-> Android package and it works the same way.
+> Built for [Heckfire](https://play.google.com/store/apps/details?id=ata.kraken.heckfire),
+> but nothing in it is Heckfire-specific. Point it at any Unity Android package
+> and it works the same way. Runs against any Android emulator that exposes adb
+> — **BlueStacks, LDPlayer, MEmu and Nox** are found automatically.
 
 ---
 
@@ -45,7 +45,7 @@ result — no adb commands, no unzipping, no hunting through folders.
 <tr><td width="50%" valign="top">
 
 ### 📦 Capture &amp; diff
-- Finds your running **BlueStacks** instance over adb
+- Finds your running **emulator** over adb — BlueStacks, LDPlayer, MEmu or Nox
 - Pulls the **APK, its splits, the OBB** and the downloaded
   content in `Android/data/<package>/files`
 - Unpacks every archive and opens **Unity bundles**, exporting
@@ -138,7 +138,7 @@ saved into the snapshot, so it keeps working after raw files are cleaned up.
 </tr>
 </table>
 
-Everything is decoded in pure Python — the binary `AndroidManifest.xml`, the
+PatchPeek decodes all of this itself — the binary `AndroidManifest.xml`, the
 `resources.arsc` table and the `.dex` files — so there's no apktool, jadx or
 Java to install for any of it (jadx is optional, only for full decompilation).
 
@@ -146,32 +146,27 @@ Java to install for any of it (jadx is optional, only for full decompilation).
 
 ## Install
 
-**From the installer** — grab `PatchPeek-Setup.exe` from
-[Releases](../../releases) and run it. Nothing else needed; Python and the
-libraries are bundled.
+Grab **`PatchPeek-Setup.exe`** from [Releases](../../releases) and run it.
+That's all — Python, the libraries and everything else are bundled inside, so
+there is nothing else to install.
 
-**From source**
+Windows 10 or 11. You also need **adb**, which every emulator ships (BlueStacks
+calls it `HD-Adb.exe`; LDPlayer and MEmu ship `adb.exe`) — PatchPeek finds it
+automatically, or point it at one in **Settings**.
 
-```bash
-git clone <this repo>
-cd PatchPeek
-setup.bat          # installs PyQt6, UnityPy, Pillow
-PatchPeek.bat      # launches the app
-debug.bat          # same, but keeps a console open so errors are visible
-```
-
-Requires **Python 3.9+** with PyQt6 (the python.org installer is fine). You
-also need **adb** — BlueStacks ships one called `HD-Adb.exe` and PatchPeek finds
-it automatically, or install Android platform-tools.
+> The installer isn't code-signed, so Windows SmartScreen may warn the first
+> time. Click **More info → Run anyway**.
 
 ---
 
 ## Using it
 
-1. Start **BlueStacks** and turn on **Settings → Advanced → Android Debug Bridge**.
+1. Start your emulator and turn on its **ADB / Android Debug Bridge** setting
+   (in BlueStacks it's **Settings → Advanced**; LDPlayer and MEmu expose it in
+   their settings too).
 2. Launch the game and let it finish downloading content. PatchPeek reads
    what's on disk; it can't make the game fetch anything.
-3. Press **Find BlueStacks**, then **Capture snapshot**.
+3. Press **Connect to emulator**, then **Capture snapshot**.
 
 The first capture has nothing to compare against, so it indexes everything as a
 baseline. After the next update, capture again and the **What's new** view shows
@@ -191,9 +186,12 @@ it takes seconds and copies nothing.
 - **Keep raw files** keeps the extracted assets on disk so the image viewer and
   the code decoder have something to read. It costs disk space; the inspector
   tabs still work without them from the saved index.
-- **F12** saves a PNG of whichever PatchPeek window you're looking at to
-  `Pictures\PatchPeek` (set `PATCHPEEK_SCREENSHOTS` to change the folder) —
-  handy for sharing a find.
+- **View before you capture.** In **Check for new content**, click any flagged
+  file and PatchPeek pulls just that one off the emulator and previews it — an
+  image directly, or the textures inside a Unity bundle — so you can decide
+  whether the drop is worth a full snapshot. Nothing else is copied.
+- **F12** saves a PNG of whichever PatchPeek window you're looking at to your
+  Pictures folder — handy for sharing a find.
 - A full capture takes a while — most of it is opening several thousand Unity
   bundles. The progress bar reports the phase and an ETA.
 
@@ -201,62 +199,34 @@ it takes seconds and copies nothing.
 
 ## Speed
 
-Snapshotting is dominated by per-file overhead on Windows, not by hashing, so:
+A full capture spends most of its time hashing thousands of files and opening
+Unity bundles. PatchPeek keeps this quick by reading and hashing on a **thread
+pool**, opening bundles on a **process pool**, storing normalized text as **one
+zip per snapshot**, and **hardlinking** gallery files instead of copying.
 
-- normalized text goes into **one zip per snapshot** instead of tens of
-  thousands of loose files
-- reads and hashes run on a **thread pool** (they're latency-bound on NTFS once
-  a realtime AV scanner is in the path)
-- Unity bundles are opened in a **process pool** — that part is CPU-bound
-- files placed in the gallery are **hardlinked**, not copied
-
-Thread count is chosen per platform and can be overridden:
-
-```bat
-set PATCHPEEK_READ_WORKERS=16
-```
-
-Measure the best value for your machine:
-
-```bat
-python core.py --bench path\to\project\extracted\<capture>
-```
-
-Excluding your project folder from Defender's realtime scanning helps too.
+If captures feel slow, open **Settings → Speed → Worker threads** and raise the
+number — that's how many files are read and hashed at once and how many bundles
+are opened in parallel. **Automatic** picks a sensible value for your CPU;
+higher can help on a many-core machine with an SSD, while too high just adds
+contention. Excluding your snapshot folder from Windows Defender's realtime
+scanning helps too.
 
 ---
 
-## Building
+## Where your data lives
 
-```bat
-build.bat            # dist\PatchPeek\ plus dist\PatchPeek-Setup.exe
-build.bat onefile    # single portable dist\PatchPeek.exe
-```
-
-The default is a folder build on purpose: every worker process of a `--onefile`
-build re-unpacks the whole archive before it can start, which is wasteful given
-the process pool. The installer needs
-[Inno Setup 6](https://jrsoftware.org/isdl.php); without it you still get the
-folder build.
-
----
-
-## Project layout
+Everything for a game sits in one snapshot folder (you pick it in Settings):
 
 | Path | What it is |
 | --- | --- |
-| `core.py` | Engine: adb, extraction, snapshots, diffing, first-seen. No GUI imports |
-| `patchpeek.py` | PyQt6 interface |
-| `manifest.py` | Binary `AndroidManifest.xml` decoder, analysis and risk review |
-| `arsc.py` | `resources.arsc` decoder (resource ids → names and values) |
-| `dex.py` | DEX reader: classes, method/field signatures, strings |
-| `tools/` | Asset generators (icons, splash, social preview, the Android framework name table) |
-| `docs/` | README screenshots and the GitHub social preview image |
-| `build.bat` / `installer.iss` | Packaging |
-| `<project>/snapshots/` | Hashes, zipped text and cached indexes per capture |
-| `<project>/new-assets/` | Full asset lists and per-diff galleries |
-| `<project>/first-seen.json` | Which capture each asset first appeared in |
-| `<project>/reports/` | Markdown diff reports |
+| `snapshots/` | Hashes, zipped text and cached indexes per capture |
+| `new-assets/` | Full asset lists and per-diff galleries |
+| `first-seen.json` | Which capture each asset first appeared in |
+| `reports/` | Markdown diff reports of what changed |
+
+Snapshots are never overwritten — re-capturing a version saves alongside the
+old one with a timestamp. Extracted assets belong to their publisher; don't
+redistribute them.
 
 ---
 
