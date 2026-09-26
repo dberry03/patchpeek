@@ -32,11 +32,6 @@ the game's files after every patch and compare the snapshots.
 PatchPeek automates that whole loop and gives you a place to browse the
 result — no adb commands, no unzipping, no hunting through folders.
 
-> Built for [Heckfire](https://play.google.com/store/apps/details?id=ata.kraken.heckfire),
-> but nothing in it is Heckfire-specific. Point it at any Unity Android package
-> and it works the same way. Runs against any Android emulator that exposes adb
-> — **BlueStacks, LDPlayer, MEmu and Nox** are found automatically.
-
 ---
 
 ## What it does
